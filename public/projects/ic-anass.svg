@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Capa_2" data-name="Capa 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 464 464">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+
+      .cls-2 {
+        fill: url(#Degradado_sin_nombre_51);
+      }
+    </style>
+    <linearGradient id="Degradado_sin_nombre_51" data-name="Degradado sin nombre 51" x1="40" y1="590" x2="424" y2="1006" gradientTransform="translate(0 -566)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#84a7c4"/>
+      <stop offset="0" stop-color="#779cba"/>
+      <stop offset="0" stop-color="#c94bae"/>
+      <stop offset="1" stop-color="#a8358b"/>
+    </linearGradient>
+  </defs>
+  <g id="Capa_1-2" data-name="Capa 1">
+    <rect class="cls-2" width="464" height="464" rx="112" ry="112"/>
+    <path class="cls-1" d="M247,251.29c-3.49,11.04-11.12,20.35-19.16,23.48-12.39,4.82-25.11,4.39-34.96-3.17,5.87-4.47,9.8-9.11,11.65-15.28l13.27-44.47c3.99-13.36,14.82-24.21,28.76-25.54,8.67-.83,17.06.59,24.56,4.62-5.84,9.18-10.31,16.65-13.26,25.98l-10.86,34.38Z"/>
+  </g>
+</svg>

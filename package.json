@@ -1,0 +1,21 @@
+{
+  "name": "franco-rotta-portfolio",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "node server.mjs --dev",
+    "start": "NODE_ENV=production node server.mjs",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.1",
+    "vite": "^8.0.9"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.14.2"
+  }
+}
