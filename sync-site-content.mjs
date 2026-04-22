@@ -19,6 +19,24 @@ const text = async (relativePath) =>
 const write = async (relativePath, contents) =>
   fs.writeFile(path.join(rootDir, relativePath), contents, "utf8");
 
+const copy = async (fromRelativePath, toRelativePath) => {
+  const targetPath = path.join(rootDir, toRelativePath);
+  await fs.mkdir(path.dirname(targetPath), { recursive: true });
+  await fs.copyFile(
+    path.join(rootDir, fromRelativePath),
+    targetPath
+  );
+};
+
+const exists = async (relativePath) => {
+  try {
+    await fs.access(path.join(rootDir, relativePath));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const quote = (value) => JSON.stringify(value);
 
 const replaceIfPresent = (input, from, to) => {
@@ -79,8 +97,34 @@ const serializeProject = (project) => {
     project.links.website
   )}},features:[${features}],technologies:[${technologies}],styles:{bgColor:${quote(
     project.styles.bgColor
-  )},textColor:${quote(project.styles.textColor)}}}`;
+  )},textColor:${quote(project.styles.textColor)},background:${quote(
+    project.styles.background || ""
+  )}}}`;
 };
+
+const HOME_MARQUEE_STYLE_JS =
+  'style:{width:"98px",height:"98px",marginTop:"-4px",marginBottom:"-4px"}';
+const HOME_MARQUEE_STYLE_HTML =
+  'class="block object-contain rounded-[1.6rem]" style="width:98px;height:98px;margin-top:-4px;margin-bottom:-4px"';
+
+const HOME_ABOUT_CONTAINER_JS =
+  'className:"relative",style:{width:"240px",height:"160px",marginRight:"-38px",marginBottom:"-44px"}';
+const HOME_WORK_CONTAINER_JS =
+  'className:"relative",style:{width:"240px",height:"160px",marginRight:"-38px",marginTop:"-38px"}';
+
+const HOME_ABOUT_CONTAINER_HTML =
+  '<div class="relative" style="width:240px;height:160px;margin-right:-38px;margin-bottom:-44px">';
+const HOME_WORK_CONTAINER_HTML =
+  '<div class="relative" style="width:240px;height:160px;margin-right:-38px;margin-top:-38px">';
+
+const HOME_ABOUT_EYES_JS = 'eyePositions:[{x:136,y:24},{x:186,y:34}]';
+const HOME_ABOUT_EYES_HTML = [
+  'style="left:136px;top:24px;transform:translate(-50%, -50%)"',
+  'style="left:186px;top:34px;transform:translate(-50%, -50%)"',
+];
+
+const HOME_WORK_DUPLICATE_STYLE =
+  'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"},style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}})';
 
 const applyHeroToHtml = async () => {
   const htmlFiles = [];
@@ -120,35 +164,37 @@ const applyHeroToHtml = async () => {
 const applyHeroToMainBundle = async () => {
   const file = "dist/assets/main-BWk4fnlg.js";
   let input = await text(file);
+  const primaryVariants = [
+    'words:["Software","Frontend","Backend","Full Stack","Problem Solver","Fast Learner","Team Player","Creative","Builder"]',
+    'words:["Software","Product","Founder","Creative","Problem Solver","French","Fluent in English","Full Stack","Self-taught"]',
+  ];
+  const secondaryVariants = [
+    'words:["Developer","Developer","","","","","","",""]',
+    'words:["Engineer","Engineer","","","","","","",""]',
+  ];
 
   input = ensure(
     input,
     (value) =>
-      value.includes(
-        'words:["Software","Frontend","Backend","Full Stack","Problem Solver","Fast Learner","Team Player","Creative","Builder"]'
-      ) ||
+      primaryVariants.some((variant) => value.includes(variant)) ||
       value.includes(`words:${JSON.stringify(hero.primaryWords)}`),
     "Could not find the main hero word array in main-BWk4fnlg.js"
   );
 
-  input = replaceIfPresent(
+  input = replaceVariants(
     input,
-    'words:["Software","Frontend","Backend","Full Stack","Problem Solver","Fast Learner","Team Player","Creative","Builder"]',
+    primaryVariants,
     `words:${JSON.stringify(hero.primaryWords)}`
   );
-  input = replaceIfPresent(
+  input = replaceVariants(
     input,
-    'words:["Developer","Developer","","","","","","",""]',
+    secondaryVariants,
     `words:${JSON.stringify(hero.secondaryWords)}`
   );
-  input = replaceIfPresent(
+  input = replaceVariants(input, ['children:"Software"'], `children:${quote(hero.fallbackPrimary)}`);
+  input = replaceVariants(
     input,
-    'children:"Software"',
-    `children:${quote(hero.fallbackPrimary)}`
-  );
-  input = replaceIfPresent(
-    input,
-    'children:"Engineer"',
+    ['children:"Engineer"', 'children:"Developer"'],
     `children:${quote(hero.fallbackSecondary)}`
   );
 
@@ -159,25 +205,172 @@ const applyHomeCards = async () => {
   const file = "dist/assets/features-BsmKvl1W.js";
   let input = await text(file);
 
-  input = replaceIfPresent(
+  input = replaceVariants(
     input,
-    "Projects I've planned, built and deployed.",
+    [
+      "Projects I've planned, built and deployed.",
+      "Personal projects I've been working on.",
+    ],
     homeCards.projects
   );
-  input = replaceIfPresent(
+  input = replaceVariants(
     input,
-    "Who I am and what I build.",
+    ["Who I am and what I build.", "A bit about myself."],
     homeCards.about
   );
-  input = replaceIfPresent(
+  input = replaceVariants(
     input,
-    "My journey in development and digital production.",
+    [
+      "My journey in development and digital production.",
+      "My career as a Software Engineer.",
+    ],
     homeCards.work
+  );
+  input = replaceVariants(
+    input,
+    [
+      "GitHub, projects and direct contact.",
+      "Email, LinkedIn, carrier pigeon...",
+    ],
+    homeCards.contact
   );
   input = replaceIfPresent(
     input,
-    "GitHub, projects and direct contact.",
-    homeCards.contact
+    'S=({project:t,className:n})=>e.jsx("div",{className:b("self-start flex-shrink-0",n),children:e.jsx(v.img,{src:t.thumbnail,alt:t.title,className:"size-28 md:size-30 block -my-2"})}),',
+    'S=({project:t,className:n})=>e.jsx("div",{className:b("self-start flex-shrink-0",n),children:e.jsx(v.img,{src:t.thumbnail,alt:t.title,className:"block object-contain rounded-[1.6rem]",style:{width:"98px",height:"98px",marginTop:"-4px",marginBottom:"-4px"}})}),'
+  );
+  input = replaceIfPresent(
+    input,
+    'S=({project:t,className:n})=>e.jsx("div",{className:b("self-start flex-shrink-0",n),children:e.jsx(v.img,{src:t.thumbnail,alt:t.title,className:"block object-contain rounded-[1.6rem]",style:t.id==="melany-portfolio"?{width:"88px",height:"126px",marginTop:"-6px",marginBottom:"-6px"}:{width:"112px",height:"112px",marginTop:"-8px",marginBottom:"-8px"}})}),',
+    'S=({project:t,className:n})=>e.jsx("div",{className:b("self-start flex-shrink-0",n),children:e.jsx(v.img,{src:t.thumbnail,alt:t.title,className:"block object-contain rounded-[1.6rem]",style:{width:"98px",height:"98px",marginTop:"-4px",marginBottom:"-4px"}})}),'
+  );
+  input = replaceIfPresent(
+    input,
+    'className:"absolute inset-0 -bottom-6 flex items-end justify-end overflow-hidden pb-4"',
+    'className:"absolute inset-0 flex items-end justify-end overflow-hidden"'
+  );
+  input = replaceVariants(
+    input,
+    [
+      'className:"relative w-48 h-28"',
+      'className:"relative",style:{width:"240px",height:"160px",marginRight:"-22px",marginBottom:"-6px"}',
+      HOME_ABOUT_CONTAINER_JS,
+      'className:"relative",style:{width:"380px",height:"255px",marginRight:"-110px",marginBottom:"-70px"}',
+      'className:"relative w-60 h-36 -mr-2 -mb-2"',
+      'className:"relative w-56 h-34 -mr-3 -mb-1"',
+      'className:"relative w-56 h-36 -mr-3 -mb-1"',
+    ],
+    HOME_ABOUT_CONTAINER_JS
+  );
+  input = input.replace(
+    /className:"relative",style:\{width:"240px",height:"160px",marginRight:"-?\d+px",marginBottom:"-?\d+px"\}/g,
+    HOME_ABOUT_CONTAINER_JS
+  );
+  input = replaceVariants(
+    input,
+    [
+      'className:"absolute top-0 w-full h-auto object-contain"',
+      'className:"absolute top-0 right-0 w-full h-auto object-contain"',
+      'className:"absolute bottom-0 right-0 w-full h-auto object-contain"',
+      'className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"}',
+    ],
+    'className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"}'
+  );
+  input = replaceIfPresent(input, 'src:"/finalincon.png"', 'src:"/bitmoji.webp"');
+  input = replaceIfPresent(
+    input,
+    'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"},style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"}})',
+    'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"}})'
+  );
+  input = replaceIfPresent(
+    input,
+    'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"},style:{clipPath:"inset(0 0 42% 0)"}})',
+    'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"}})'
+  );
+  input = replaceIfPresent(
+    input,
+    'eyePositions:[{x:150,y:60},{x:180,y:67}]',
+    HOME_ABOUT_EYES_JS
+  );
+  input = replaceIfPresent(
+    input,
+    'eyePositions:[{x:117,y:70},{x:140,y:83}]',
+    HOME_ABOUT_EYES_JS
+  );
+  input = replaceIfPresent(
+    input,
+    'eyePositions:[{x:110,y:24},{x:132,y:27}]',
+    HOME_ABOUT_EYES_JS
+  );
+  input = replaceIfPresent(
+    input,
+    'eyePositions:[{x:106,y:40},{x:129,y:45}]',
+    HOME_ABOUT_EYES_JS
+  );
+  input = replaceIfPresent(
+    input,
+    'eyePositions:[{x:114,y:33},{x:138,y:41}]',
+    HOME_ABOUT_EYES_JS
+  );
+  input = replaceIfPresent(
+    input,
+    'eyePositions:[{x:142,y:42},{x:172,y:51}]',
+    HOME_ABOUT_EYES_JS
+  );
+  input = replaceIfPresent(
+    input,
+    'eyePositions:[{x:236,y:96},{x:286,y:107}]',
+    HOME_ABOUT_EYES_JS
+  );
+  input = replaceIfPresent(
+    input,
+    'className:"relative w-48 h-24"',
+    HOME_WORK_CONTAINER_JS
+  );
+  input = replaceIfPresent(
+    input,
+    'className:"relative",style:{width:"240px",height:"160px",marginRight:"-22px",marginTop:"-10px"}',
+    HOME_WORK_CONTAINER_JS
+  );
+  input = replaceIfPresent(
+    input,
+    'className:"relative",style:{width:"380px",height:"255px",marginRight:"-110px",marginTop:"-34px"}',
+    HOME_WORK_CONTAINER_JS
+  );
+  input = input.replace(
+    /className:"relative",style:\{width:"240px",height:"160px",marginRight:"-?\d+px",marginTop:"-?\d+px"\}/g,
+    HOME_WORK_CONTAINER_JS
+  );
+
+  input = replaceIfPresent(
+    input,
+    HOME_WORK_DUPLICATE_STYLE,
+    `e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}})`
+  );
+  input = replaceIfPresent(
+    input,
+    'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute bottom-4 w-full h-auto object-contain rounded-bl-lg",style:{clipPath:"inset(55% 0 0 0)"}})',
+    'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}})'
+  );
+  input = replaceIfPresent(
+    input,
+    'className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}',
+    'className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}'
+  );
+  input = replaceIfPresent(
+    input,
+    'className:"absolute bottom-4 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none"',
+    'className:"absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none"'
+  );
+  input = replaceIfPresent(
+    input,
+    'className:"absolute bottom-4 top-0 left-0 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none"',
+    'className:"absolute bottom-0 top-0 left-0 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none"'
+  );
+  input = replaceIfPresent(
+    input,
+    'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"},style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}})',
+    'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}})'
   );
 
   await write(file, input);
@@ -185,21 +378,148 @@ const applyHomeCards = async () => {
 
 const applyHomeHtml = async () => {
   let html = await text("dist/index.html");
-  html = replaceIfPresent(
+  html = replaceVariants(
     html,
-    "Projects I&#x27;ve planned, built and deployed.",
+    [
+      "Projects I&#x27;ve planned, built and deployed.",
+      "Personal projects I&#x27;ve been working on.",
+      "Personal projects I've been working on.",
+    ],
     homeCards.projects
   );
-  html = replaceIfPresent(html, "Who I am and what I build.", homeCards.about);
-  html = replaceIfPresent(
+  html = replaceVariants(
     html,
-    "My journey in development and digital production.",
+    ["Who I am and what I build.", "A bit about myself."],
+    homeCards.about
+  );
+  html = replaceVariants(
+    html,
+    [
+      "My journey in development and digital production.",
+      "My career as a Software Engineer.",
+    ],
     homeCards.work
+  );
+  html = replaceVariants(
+    html,
+    [
+      "GitHub, projects and direct contact.",
+      "Email, LinkedIn, carrier pigeon...",
+    ],
+    homeCards.contact
   );
   html = replaceIfPresent(
     html,
-    "GitHub, projects and direct contact.",
-    homeCards.contact
+    'class="size-28 md:size-30 block -my-2"',
+    HOME_MARQUEE_STYLE_HTML
+  );
+  html = replaceIfPresent(
+    html,
+    'class="block object-contain rounded-[1.6rem]" style="width:112px;height:112px;margin-top:-8px;margin-bottom:-8px"',
+    HOME_MARQUEE_STYLE_HTML
+  );
+  html = replaceIfPresent(
+    html,
+    'class="absolute inset-0 -bottom-6 flex items-end justify-end overflow-hidden pb-4"',
+    'class="absolute inset-0 flex items-end justify-end overflow-hidden"'
+  );
+  html = replaceIfPresent(
+    html,
+    '<div class="relative w-48 h-28">',
+    HOME_ABOUT_CONTAINER_HTML
+  );
+  html = replaceIfPresent(
+    html,
+    '<div class="relative" style="width:380px;height:255px;margin-right:-110px;margin-bottom:-70px">',
+    HOME_ABOUT_CONTAINER_HTML
+  );
+  html = html.replace(
+    /<div class="relative" style="width:240px;height:160px;margin-right:-?\d+px;margin-bottom:-?\d+px">/g,
+    HOME_ABOUT_CONTAINER_HTML
+  );
+  html = replaceIfPresent(
+    html,
+    '<div class="relative" style="width:240px;height:160px;margin-right:-22px;margin-bottom:-6px">',
+    HOME_ABOUT_CONTAINER_HTML
+  );
+  html = replaceIfPresent(
+    html,
+    '<img src="/finalincon.png" alt="" class="absolute top-0 w-full h-auto object-contain" style="clip-path:inset(0 0 42% 0)"/>',
+    '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(0 0 42% 0)"/>'
+  );
+  html = replaceIfPresent(
+    html,
+    '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(0 0 42% 0)" style="clip-path:inset(0 0 42% 0)"/>',
+    '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(0 0 42% 0)"/>'
+  );
+  html = replaceIfPresent(
+    html,
+    'style="left:117px;top:70px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[0]
+  );
+  html = replaceIfPresent(
+    html,
+    'style="left:140px;top:83px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[1]
+  );
+  html = replaceIfPresent(
+    html,
+    'style="left:236px;top:96px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[0]
+  );
+  html = replaceIfPresent(
+    html,
+    'style="left:286px;top:107px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[1]
+  );
+  html = replaceIfPresent(
+    html,
+    'style="left:150px;top:60px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[0]
+  );
+  html = replaceIfPresent(
+    html,
+    'style="left:180px;top:67px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[1]
+  );
+  html = replaceIfPresent(
+    html,
+    '<div class="relative w-48 h-24">',
+    HOME_WORK_CONTAINER_HTML
+  );
+  html = replaceIfPresent(
+    html,
+    '<div class="relative" style="width:380px;height:255px;margin-right:-110px;margin-top:-34px">',
+    HOME_WORK_CONTAINER_HTML
+  );
+  html = html.replace(
+    /<div class="relative" style="width:240px;height:160px;margin-right:-?\d+px;margin-top:-?\d+px">/g,
+    HOME_WORK_CONTAINER_HTML
+  );
+  html = replaceIfPresent(
+    html,
+    '<div class="relative" style="width:240px;height:160px;margin-right:-22px;margin-top:-10px">',
+    HOME_WORK_CONTAINER_HTML
+  );
+  html = replaceIfPresent(
+    html,
+    '<img src="/finalincon.png" alt="" class="absolute bottom-4 w-full h-auto object-contain rounded-bl-lg" style="clip-path:inset(55% 0 0 0)"/>',
+    '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(55% 0 0 0)"/>'
+  );
+  html = replaceIfPresent(
+    html,
+    '<img src="/bitmoji.webp" alt="" class="absolute bottom-4 w-full h-auto object-contain rounded-bl-lg" style="clip-path:inset(55% 0 0 0)"/>',
+    '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(55% 0 0 0)"/>'
+  );
+  html = replaceIfPresent(
+    html,
+    'class="absolute bottom-4 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none"',
+    'class="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none"'
+  );
+  html = replaceIfPresent(
+    html,
+    'class="absolute bottom-4 top-0 left-0 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none"',
+    'class="absolute bottom-0 top-0 left-0 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none"'
   );
   await write("dist/index.html", html);
 };
@@ -208,7 +528,18 @@ const applyContactLinks = async () => {
   const file = "dist/assets/index-CGlUleov.js";
   let input = await text(file);
 
-  const linksSource = `const links = [
+  const compactSource =
+    `const o=[{name:"Email",url:${quote(contactLinks[0].url)},iconUrl:${quote(
+      contactLinks[0].iconUrl
+    )},className:${quote(contactLinks[0].className)}},{name:"GitHub",url:${quote(
+      contactLinks[1].url
+    )},iconUrl:${quote(contactLinks[1].iconUrl)},className:${quote(
+      contactLinks[1].className
+    )}},{name:"LinkedIn",url:${quote(contactLinks[2].url)},iconUrl:${quote(
+      contactLinks[2].iconUrl
+    )},className:${quote(contactLinks[2].className)}}],c=({link:s})=>`;
+
+  const expandedSource = `const links = [
   {
     name: "Email",
     url: ${quote(contactLinks[0].url)},
@@ -218,7 +549,7 @@ const applyContactLinks = async () => {
   {
     name: "GitHub",
     url: ${quote(contactLinks[1].url)},
-    iconUrl: \`\${n}github/github\`,
+    iconUrl: ${quote(contactLinks[1].iconUrl)},
     className: ${quote(contactLinks[1].className)},
   },
   {
@@ -229,16 +560,13 @@ const applyContactLinks = async () => {
   },
 ];`;
 
-  input = input.replace(/const links = \[[\s\S]*?\];/, linksSource);
+  input = input.replace(
+    /const o=\[[\s\S]*?\],c=\(\{link:s\}\)=>/,
+    compactSource
+  );
+  input = input.replace(/const links = \[[\s\S]*?\];/, expandedSource);
+
   await write(file, input);
-
-  const emailSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-  <path d="M4 7h16v10H4z" stroke="#fff" stroke-width="1.75" rx="2"/>
-  <path d="m5 8 7 5 7-5" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
-`;
-
-  await write("dist/email.svg", emailSvg);
 };
 
 const applyContactForm = async () => {
@@ -249,6 +577,37 @@ const applyContactForm = async () => {
     input,
     '"https://api.web3forms.com/submit"',
     '"/api/contact"'
+  );
+  input = replaceIfPresent(
+    input,
+    "Name is required - even the Night King needs one!",
+    "Name is required."
+  );
+  input = replaceIfPresent(
+    input,
+    "Invalid email address - try a carrier pigeon?",
+    "Enter a valid email address."
+  );
+  input = replaceIfPresent(
+    input,
+    "Message too short - tell me your tale!",
+    "Message should be at least 15 characters."
+  );
+  input = replaceIfPresent(input, "Get in Touch", "Start a conversation");
+  input = replaceIfPresent(input, "Thank You!", "Message sent");
+  input = replaceIfPresent(input, "Oops!", "Something went wrong");
+  input = replaceIfPresent(
+    input,
+    "I'll get back to you as soon as possible.",
+    "I'll reply as soon as I can."
+  );
+  input = replaceIfPresent(input, "Jon Snow", "Franco Rotta");
+  input = replaceIfPresent(input, "jon.snow@stark.com", "franco.rotta@hotmail.com");
+  input = replaceIfPresent(input, "Night's Watch Inc.", "Your company or project");
+  input = replaceIfPresent(
+    input,
+    "Winter is coming...",
+    "Tell me a bit about your project, role or idea."
   );
 
   await write(file, input);
@@ -285,8 +644,246 @@ const applyProjectsPageBundle = async () => {
   await write(file, input);
 };
 
+const applyProjectCardBundle = async () => {
+  const file = "dist/assets/project-card-BIefMaxb.js";
+  const moduleSource = `import{r as React,j as jsx,m as motion,c as cn}from"./main-BWk4fnlg.js";
+
+const gradients={
+  scraaatch:"linear-gradient(135deg, #f5cf67 0%, #e1a316 48%, #cb7f00 100%)",
+  anass:"linear-gradient(135deg, #d69af8 0%, #9646dd 50%, #6417b5 100%)",
+  "daily-story":"linear-gradient(135deg, #91cca3 0%, #4f9b68 50%, #2f6e49 100%)",
+  "zod-json-schema-builder":"linear-gradient(135deg, #8ab8ff 0%, #4684eb 50%, #2558be 100%)",
+  "melany-portfolio":"linear-gradient(135deg, #6b6b76 0%, #2f2f37 38%, #111116 72%, #4b4b58 100%)"
+};
+
+const InteractiveCard=({children,containerClassName,className,containerStyle})=>{
+  const[mouse,setMouse]=React.useState({x:0,y:0});
+  const[hovered,setHovered]=React.useState(false);
+  const handleMouseMove=(event)=>{
+    const{clientX,clientY}=event;
+    const rect=event.currentTarget.getBoundingClientRect();
+    const x=(clientX-(rect.left+rect.width/2))/20;
+    const y=(clientY-(rect.top+rect.height/2))/20;
+    setMouse({x,y});
+  };
+
+  return jsx.jsx(motion.section,{
+    onMouseMove:handleMouseMove,
+    onMouseEnter:()=>setHovered(true),
+    onMouseLeave:()=>{
+      setHovered(false);
+      setMouse({x:0,y:0});
+    },
+    style:{
+      ...containerStyle,
+      transform:hovered?\`translate3d(\${mouse.x}px, \${mouse.y}px, 0) scale3d(1, 1, 1)\`:"translate3d(0px, 0px, 0) scale3d(1, 1, 1)",
+      transition:"transform 0.1s ease-out"
+    },
+    className:cn("mx-auto w-full bg-primary relative rounded-2xl overflow-hidden",containerClassName),
+    children:jsx.jsx("div",{
+      className:"relative h-full [background-image:radial-gradient(88%_100%_at_top,rgba(255,255,255,0.5),rgba(255,255,255,0))] sm:mx-0 sm:rounded-2xl overflow-hidden",
+      style:{
+        boxShadow:"0 10px 32px rgba(34, 42, 53, 0.12), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(34, 42, 53, 0.05), 0 4px 6px rgba(34, 42, 53, 0.08), 0 24px 108px rgba(47, 48, 55, 0.10)"
+      },
+      children:jsx.jsxs(motion.div,{
+        style:{
+          transform:hovered?\`translate3d(\${-mouse.x}px, \${-mouse.y}px, 0) scale3d(1.03, 1.03, 1)\`:"translate3d(0px, 0px, 0) scale3d(1, 1, 1)",
+          transition:"transform 0.1s ease-out"
+        },
+        className:cn("h-full px-4 py-20 sm:px-10",className),
+        children:[jsx.jsx(NoiseOverlay,{}),children]
+      })
+    })
+  });
+};
+
+const NoiseOverlay=()=>jsx.jsx("div",{
+  className:"absolute inset-0 w-full h-full scale-[1.2] transform opacity-10 [mask-image:radial-gradient(#fff,transparent,75%)] z-0",
+  style:{backgroundImage:"url(/noise.webp)",backgroundSize:"30%"}
+});
+
+const ProjectCard=({project,withImagePadding=false})=>jsx.jsx(InteractiveCard,{
+  className:"flex-col sm:flex-row h-full !pt-2 pb-4 !px-4 sm:!px-6 flex rounded-2xl relative mx-auto group overflow-hidden",
+  containerClassName:cn(project.styles.bgColor,project.styles.textColor),
+  containerStyle:project.styles.background?{background:project.styles.background||gradients[project.id]}:{background:gradients[project.id]},
+  children:jsx.jsxs("div",{
+    className:"flex flex-row items-start gap-4 p-0",
+    children:[
+      jsx.jsx("div",{
+        className:cn("self-start flex-shrink-0",{"pt-2":withImagePadding}),
+        children:jsx.jsx("img",{
+          src:project.thumbnail,
+          alt:project.title,
+          className:cn("size-28 md:size-30 block object-contain rounded-[1.6rem]",project.id==="melany-portfolio"&&"scale-[0.82]")
+        })
+      }),
+      jsx.jsx("div",{
+        className:"flex flex-col justify-between items-start gap-2 z-20 text-left max-w-[300px] sm:max-w-[340px] md:max-w-[380px] break-words min-w-0",
+        children:jsx.jsxs("div",{
+          className:"flex flex-col gap-1",
+          children:[
+            jsx.jsx("h2",{className:"text-2xl md:text-3xl !mb-0 font-bold tracking-tight line-clamp-2 !text-inherit group-hover:scale-[1.02] transition-transform duration-200 ",children:project.title}),
+            jsx.jsx("span",{className:"text-xs md:text-base line-clamp-4 hyphens-auto",children:project.description})
+          ]
+        })
+      })
+    ]
+  })
+});
+
+export{ProjectCard as P,InteractiveCard as W};
+`;
+
+  await write(file, moduleSource);
+};
+
+const applyWorkExperienceArt = async () => {
+  const file = "dist/assets/index-CkJi5eF3.js";
+  let input = await text(file);
+
+  const replacements = [
+    ['src:"/hmy.svg"', 'src:"/bitmoji.webp"'],
+    ['src:"/sparksport.svg"', 'src:"/bitmoji.webp"'],
+    ['src="/hmy.svg"', 'src="/bitmoji.webp"'],
+    ['src="/sparksport.svg"', 'src="/bitmoji.webp"'],
+    ['href="/hmy.svg"', 'href="/bitmoji.webp"'],
+    ['href="/sparksport.svg"', 'href="/bitmoji.webp"'],
+    ["Harmoney logo", "Franco Rotta illustration"],
+    ["Spark Sport logo", "Franco Rotta illustration"],
+    [
+      'src:"/bitmoji.webp",alt:"Franco Rotta logo",width:200,height:25',
+      'src:"/bitmoji.webp",alt:"Franco Rotta illustration",width:220,height:220',
+    ],
+    [
+      'src:"/bitmoji.webp",alt:"Franco Rotta logo",width:200,height:25,loading:"lazy",className:"dark:invert-0 invert"',
+      'src:"/bitmoji.webp",alt:"Franco Rotta illustration",width:220,height:220,loading:"lazy"',
+    ],
+    [
+      'src="/bitmoji.webp" alt="Franco Rotta logo" width="200" height="25"',
+      'src="/bitmoji.webp" alt="Franco Rotta illustration" width="220" height="220"',
+    ],
+    [
+      'src="/bitmoji.webp" alt="Franco Rotta logo" width="200" height="25" loading="lazy" class="dark:invert-0 invert"',
+      'src="/bitmoji.webp" alt="Franco Rotta illustration" width="220" height="220" loading="lazy"',
+    ],
+    ["Fullstack Engineer | January 2023 - Present", "Full Stack Developer | 2024 - Present"],
+    [
+      "Created a library to collect analytics across the platform and landing pages, enabling data-driven decision-making.",
+      "Built a Next.js commerce flow for Tostadero Wellington with Mercado Pago checkout and server-side webhooks into Supabase.",
+    ],
+    [
+      "Executed a seamless migration of the core data layer from TypeORM to Prisma, improving developer experience and reducing database migration conflicts.",
+      "Built an internal operations board, cart persistence and discount logic for day-to-day order management.",
+    ],
+    [
+      "Taking part in numerous focus groups related to product development, user experience and developer tooling.",
+      "Designed and implemented SEMO's WhatsApp appointment flow with Twilio, Node.js and Express.",
+    ],
+    [
+      "Proactively improved the developer experience to maintain high velocity across the team.",
+      "Developed a React/Vite admin panel with role-based access and PostgreSQL scheduling logic for six specialties.",
+    ],
+    [
+      "Helped organise an internal hackathon to foster innovation and collaboration. Curated a list of tools and technologies that non-technical team members could use to build prototypes.",
+      "Delivered Sancor's React + Vite + Tailwind quote flow with Netlify Functions and real-time validation.",
+    ],
+    [
+      "Accelerated teammate onboarding with React by leading pair-programming sessions and code reviews.",
+      "Shipped and maintained these tools through deployment, operations and iterative client feedback.",
+    ],
+    [
+      "Mentored three cohorts of interns.",
+      "Worked end-to-end from product requirements to launch, keeping a strong focus on reliability and user flow.",
+    ],
+    ["Fullstack Engineer | August 2021 - January 2023", "Audiovisual Production & Streaming | 2021 - Present"],
+    [
+      "Boosted SEO performance and developer productivity by leading the upgrade of a legacy application to Next.js and refactoring most of the codebase to TypeScript.",
+      "Project-based and ongoing production work across Insert BIC / Insert Beat and Iglesia Brazos Abiertos.",
+    ],
+    [
+      "Collaborated with the design lead to implement a Design System and automated the design token handover from Figma to Storybook.",
+      "Planned and executed 4K multicam productions (S-Log3) with 3 to 5 cameras and occasional live switching with ATEM Mini Pro.",
+    ],
+    [
+      "Improved release stability by redesigning and implementing a new Git workflow across all frontend applications.",
+      "Led hired camera operators and owned pre-production, technical direction, post-production and delivery.",
+    ],
+    [
+      "Enhanced the streaming experience for Web players and Chromecast.",
+      "Delivered publish-ready edits under tight turnaround requirements, often in under 24 hours.",
+    ],
+    [
+      "Enabled a new revenue stream by successfully implementing Google Dynamic Ad Insertion (DAI) for the Chromecast platform.",
+      "Produced 10+ event productions and 50+ edited assets across social, event and streaming cycles.",
+    ],
+  ];
+
+  for (const [from, to] of replacements) {
+    input = replaceIfPresent(input, from, to);
+  }
+
+  input = replaceIfPresent(
+    input,
+    'e.jsx(r,{src:"/finalincon.png",alt:"Franco Rotta illustration",width:220,height:220})',
+    'e.jsx(r,{src:"/bitmoji.webp",alt:"Franco Rotta illustration",width:220,height:220})'
+  );
+  input = replaceIfPresent(
+    input,
+    'e.jsx(r,{src:"/finalincon.png",alt:"Franco Rotta illustration",width:220,height:220,loading:"lazy"})',
+    'e.jsx(r,{src:"/bitmoji.webp",alt:"Franco Rotta illustration",width:220,height:220,loading:"lazy"})'
+  );
+
+  await write(file, input);
+
+  const htmlFile = "dist/work-experience/index.html";
+  let html = await text(htmlFile);
+  for (const [from, to] of replacements) {
+    html = replaceIfPresent(html, from, to);
+  }
+  html = replaceIfPresent(
+    html,
+    '<link rel="preload" as="image" href="/hmy.svg"/>',
+    '<link rel="preload" as="image" href="/bitmoji.webp"/>'
+  );
+  html = replaceIfPresent(
+    html,
+    '<link rel="preload" as="image" href="/sparksport.svg"/>',
+    '<link rel="preload" as="image" href="/bitmoji.webp"/>'
+  );
+  html = replaceIfPresent(
+    html,
+    '<img src="/hmy.svg" alt="Franco Rotta illustration" width="220" height="220"/>',
+    '<img src="/bitmoji.webp" alt="Franco Rotta illustration" width="220" height="220"/>'
+  );
+  html = replaceIfPresent(
+    html,
+    '<img src="/sparksport.svg" alt="Franco Rotta illustration" width="220" height="220" loading="lazy"/>',
+    '<img src="/bitmoji.webp" alt="Franco Rotta illustration" width="220" height="220" loading="lazy"/>'
+  );
+  html = replaceIfPresent(
+    html,
+    '<link rel="preload" as="image" href="/finalincon.png"/>',
+    '<link rel="preload" as="image" href="/bitmoji.webp"/>'
+  );
+  html = replaceIfPresent(
+    html,
+    '<img src="/finalincon.png" alt="Franco Rotta illustration" width="220" height="220"/>',
+    '<img src="/bitmoji.webp" alt="Franco Rotta illustration" width="220" height="220"/>'
+  );
+  html = replaceIfPresent(
+    html,
+    '<img src="/finalincon.png" alt="Franco Rotta illustration" width="220" height="220" loading="lazy"/>',
+    '<img src="/bitmoji.webp" alt="Franco Rotta illustration" width="220" height="220" loading="lazy"/>'
+  );
+  await write(htmlFile, html);
+};
+
 const applyProjectsHtml = async () => {
   const replacements = [
+    [
+      "Commerce flow with Mercado Pago to your family and friends.",
+      projects[0].description,
+    ],
     [
       "Online ordering flow with checkout, payment status pages and internal order management.",
       projects[0].description,
@@ -317,6 +914,31 @@ const applyProjectsHtml = async () => {
   for (const [from, to] of replacements) {
     listHtml = replaceIfPresent(listHtml, from, to);
   }
+  listHtml = replaceIfPresent(listHtml, "bg-red-700", "bg-blue-800");
+
+  const projectGradients = {
+    scraaatch:
+      "linear-gradient(135deg, #f5cf67 0%, #e1a316 48%, #cb7f00 100%)",
+    anass:
+      "linear-gradient(135deg, #d69af8 0%, #9646dd 50%, #6417b5 100%)",
+    "daily-story":
+      "linear-gradient(135deg, #91cca3 0%, #4f9b68 50%, #2f6e49 100%)",
+    "zod-json-schema-builder":
+      "linear-gradient(135deg, #8ab8ff 0%, #4684eb 50%, #2558be 100%)",
+    "melany-portfolio":
+      "linear-gradient(135deg, #6b6b76 0%, #2f2f37 38%, #111116 72%, #4b4b58 100%)",
+  };
+
+  for (const [projectId, gradient] of Object.entries(projectGradients)) {
+    listHtml = listHtml.replace(
+      new RegExp(
+        `(<a href="/projects/${projectId}"[\\s\\S]*?<section class="[^"]*" style=")([^"]*)"`,
+        "m"
+      ),
+      (_, prefix, existingStyle) => `${prefix}background:${gradient};${existingStyle}"`
+    );
+  }
+
   await write("dist/projects/index.html", listHtml);
 
   const detailPages = [
@@ -433,6 +1055,10 @@ const applyProjectsHtml = async () => {
   ];
 
   for (const detail of detailPages) {
+    if (!(await exists(detail.path))) {
+      continue;
+    }
+
     let html = await text(detail.path);
     html = replaceIfPresent(html, detail.current.subtitle, detail.next.subtitle);
     html = replaceIfPresent(html, detail.current.description, detail.next.description);
@@ -457,12 +1083,52 @@ const applyProjectsHtml = async () => {
     }
 
     if (detail.path.endsWith("scraaatch/index.html")) {
+      html = replaceIfPresent(
+        html,
+        "Take-away ordering with Mercado Pago to your family and friends.",
+        detail.next.description
+      );
       html = replaceIfPresent(html, "Shadcn UI", "Supabase");
     }
 
+    if (detail.path.endsWith("daily-story/index.html")) {
+      html = replaceIfPresent(
+        html,
+        "At midnight (UTC), it uses AI to generate a unique title, theme and cover image, providing the initial spark of inspiration.\nThroughout the day, anyone can visit the site and contribute their part of the story. It allows a 500 characters contribution. Every contribution appears instantly for everyone to see.\nAt the end of the day, Gemini reads all the contributions, edits them for flow and coherence, and compiles a final, polished short story. It also generates a full audiobook.\nThis project was built during the Bolt.new hackathon\n",
+        detail.next.longDescription
+      );
+      html = replaceIfPresent(html, "Creative Writing", detail.next.category);
+      html = replaceIfPresent(html, "AI-generated themes and covers", detail.next.features[0]);
+      html = replaceIfPresent(html, "Daily story cycle", detail.next.features[1]);
+      html = replaceIfPresent(html, "AI editing and compilation", detail.next.features[2]);
+      html = replaceIfPresent(html, "Audiobook generation", detail.next.features[3]);
+      html = replaceIfPresent(html, "AI moderation", detail.next.features[4]);
+      html = replaceIfPresent(html, "React", "HTML5");
+      html = replaceIfPresent(html, "Vite", "JavaScript");
+      html = replaceIfPresent(html, "Tailwind", "Tailwind CSS");
+      html = replaceIfPresent(html, "Convex", "AOS");
+      html = replaceIfPresent(html, "Netlify", "Vercel");
+      html = replaceIfPresent(html, "Gemini", "Maps");
+      html = replaceIfPresent(html, "Eleven Labs", "SEO");
+    }
+
     if (detail.path.endsWith("zod-json-schema-builder/index.html")) {
-      html = replaceIfPresent(html, "MongoDB", "PostgreSQL");
-      html = replaceIfPresent(html, "JWT", "Twilio");
+      html = replaceIfPresent(
+        html,
+        "A web application that allows developers to create data schemas visually through a user-friendly form interface. The tool generates both JSON Schema and Zod validation code, streamlining the schema creation process for various applications.",
+        detail.next.longDescription
+      );
+      html = replaceIfPresent(html, "Web App", detail.next.category);
+      html = replaceIfPresent(html, "2025", detail.next.year);
+      html = replaceIfPresent(html, "Visual schema builder", detail.next.features[0]);
+      html = replaceIfPresent(html, "Generates JSON Schema", detail.next.features[1]);
+      html = replaceIfPresent(html, "Generates Zod validation code", detail.next.features[2]);
+      html = replaceIfPresent(html, "User-friendly interface", detail.next.features[3]);
+      html = replaceIfPresent(html, "Export and share schemas", detail.next.features[4]);
+      html = replaceIfPresent(html, "Tailwind", "Node.js");
+      html = replaceIfPresent(html, "Netlify", "Express");
+      html = replaceIfPresent(html, "Zod", "PostgreSQL");
+      html = replaceIfPresent(html, "Shadcn UI", "Twilio");
       html = replaceIfPresent(html, "Vercel", "Railway");
     }
 
@@ -485,6 +1151,26 @@ const applyProjectsHtml = async () => {
   }
 };
 
+const applyStaticAssets = async () => {
+  const staticAssets = [
+    ["public/bitmoji.webp", "dist/bitmoji.webp"],
+    ["public/finalincon.png", "dist/finalincon.png"],
+    ["public/email.svg", "dist/email.svg"],
+    ["public/github.svg", "dist/github.svg"],
+    ["public/linkedin.svg", "dist/linkedin.svg"],
+    ["public/projects/IC-Melany.png", "dist/projects/IC-Melany.png"],
+    ["public/projects/IC-Melany-thumb.png", "dist/projects/IC-Melany-thumb.png"],
+    ["public/projects/ic-anass.svg", "dist/projects/ic-anass.svg"],
+    ["public/projects/ic-daily-story.svg", "dist/projects/ic-daily-story.svg"],
+    ["public/projects/ic-scraaatch.svg", "dist/projects/ic-scraaatch.svg"],
+    ["public/projects/ic-zod-json.svg", "dist/projects/ic-zod-json.svg"],
+  ];
+
+  for (const [fromPath, toPath] of staticAssets) {
+    await copy(fromPath, toPath);
+  }
+};
+
 export async function applyMirrorCustomizations() {
   await applyHeroToHtml();
   await applyHeroToMainBundle();
@@ -494,7 +1180,10 @@ export async function applyMirrorCustomizations() {
   await applyContactForm();
   await applyProjectDataToMainBundle();
   await applyProjectsPageBundle();
+  await applyProjectCardBundle();
   await applyProjectsHtml();
+  await applyWorkExperienceArt();
+  await applyStaticAssets();
 }
 
 const isDirectRun =

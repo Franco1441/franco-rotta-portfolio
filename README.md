@@ -1,43 +1,45 @@
-# Franco Rotta Portfolio
+# Franco Rotta Portfolio Mirror
 
-Portfolio rebuilt on a normal editable structure:
-- `src/` for pages, components, and styles
-- `public/` for images and static assets
-- `site-content.mjs` as the single source of truth for profile data, projects, experience, and contact info
-- `server.mjs` for the local API (`/api/chat`, `/api/contact`) and production serving
+Este proyecto sigue teniendo una base de mirror estático del sitio original, pero ahora la personalización del contenido vive en archivos propios para no editar `dist/` a mano cada vez.
 
-## Scripts
+Snapshot local del sitio [franckpoingt.dev](https://www.franckpoingt.dev) para mantener el clon visual exacto.
 
-- `npm run dev`
-  Starts the local development server with Vite and the backend endpoints on the same port.
+## Flujo
 
-- `npm run build`
-  Builds the frontend into `dist/`.
+1. `npm run mirror`
+   Descarga otra vez las rutas y assets del sitio base hacia `dist/`.
 
-- `npm run start`
-  Serves the built site from `dist/` together with the chat and contact endpoints.
+2. `npm run sync:content`
+   Reaplica el contenido de Franco sobre el mirror usando:
+   - `site-content.mjs` como fuente central de datos y copy
+   - `sync-site-content.mjs` como script de sincronización
+   - `update-profile-content.mjs` como capa final de ajustes sobre el HTML y bundles espejados
 
-## Main Editing Points
+3. `npm run dev`
+   Levanta el sitio local con:
+   - archivos estáticos desde `dist/`
+   - `Ask FrancoGPT`
+   - endpoint local para el formulario de contacto
 
-- `site-content.mjs`
-  Edit your name, links, hero copy, about text, work experience, and project content here.
-  Project title colors are controlled per project in `theme.title`.
+## Comandos
 
-- `src/styles.css`
-  Edit colors, typography, spacing, card appearance, and title colors here.
-  Work Experience role titles are controlled by `.timeline-item__content h2`.
+- `npm run mirror`: vuelve a descargar rutas y assets desde el sitio online.
+- `npm run sync:content`: reaplica el contenido local sobre el mirror.
+- `npm run build`: ejecuta mirror + sync en un solo paso.
+- `npm run dev`: levanta preview local en `http://localhost:3000`.
+- `npm run start`: sirve el mismo preview estático y las APIs locales.
 
-- `src/pages/*`
-  Edit page structure if you want to rearrange sections.
+## Archivos clave
 
-- `src/components/*`
-  Edit reusable UI like the home cards, chat panel, contact form, and project cards.
+- `site-content.mjs`: perfil, hero, contacto y contenido de proyectos.
+- `sync-site-content.mjs`: aplica el contenido al mirror compilado.
+- `update-profile-content.mjs`: corrige texto, header y páginas estáticas del snapshot.
+- `server.mjs`: sirve el sitio, el chat y el endpoint de contacto.
+- `mirror-site.mjs`: vuelve a descargar el snapshot del sitio base.
 
-## Contact Form
+## Nota importante
 
-The form posts to `/api/contact`, which forwards to FormSubmit using `franco.rotta@hotmail.com`.
-If FormSubmit asks for activation on the first real submission, confirm it once from your email inbox and it will keep working normally.
-
-## Notes
-
-Legacy mirror scripts are still in the repository for reference, but the current app no longer depends on the mirrored build workflow.
+- El mirror genera archivos estáticos en `dist/`.
+- Fecha de snapshot actual: `2026-04-15`.
+- Como la base sigue siendo un build espejado, parte del trabajo todavía se aplica sobre bundles compilados.
+- La mejora real de mantenibilidad en una siguiente etapa sería reconstruir esto con una estructura `src/` propia y un build controlado por nosotros, pero sin cambiar el diseño aprobado.

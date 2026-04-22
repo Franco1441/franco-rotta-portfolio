@@ -44,19 +44,19 @@ export const contactLinks = [
     name: "Email",
     url: `mailto:${profile.email}`,
     iconUrl: "/email.svg",
-    className: "bg-neutral-900 hover:bg-neutral-800",
+    className: "bg-stone-700 text-white",
   },
   {
     name: "GitHub",
     url: profile.github,
-    iconUrl: "github",
-    className: "dark:bg-gray-200 dark:hover:bg-gray-100",
+    iconUrl: "/github.svg",
+    className: "bg-neutral-900 text-white",
   },
   {
     name: "LinkedIn",
     url: profile.linkedin,
     iconUrl: "/linkedin.svg",
-    className: "bg-sky-600 hover:bg-sky-700",
+    className: "bg-blue-700 text-white",
   },
 ];
 
@@ -92,7 +92,12 @@ export const projects = [
       { name: "Mercado Pago", slug: "mercadopago/mercadopago" },
       { name: "Vercel", slug: "vercel/vercel" },
     ],
-    styles: { bgColor: "bg-yellow-600", textColor: "text-black" },
+    styles: {
+      bgColor: "bg-yellow-600",
+      textColor: "text-white",
+      background:
+        "linear-gradient(135deg, #124770 0%, #2c6896 48%, #286594 100%)",
+    },
   },
   {
     id: "anass",
@@ -125,7 +130,12 @@ export const projects = [
       { name: "jsPDF", slug: "adobeacrobatreader/adobeacrobatreader" },
       { name: "Netlify", slug: "netlify/netlify" },
     ],
-    styles: { bgColor: "bg-purple-800", textColor: "text-white" },
+    styles: {
+      bgColor: "bg-purple-800",
+      textColor: "text-white",
+      background:
+        "linear-gradient(135deg, #c151a6 0%, #cc50af 50%, #b33495 100%)",
+    },
   },
   {
     id: "daily-story",
@@ -156,7 +166,12 @@ export const projects = [
       { name: "AOS", slug: "greensock/greensock" },
       { name: "Vercel", slug: "vercel/vercel" },
     ],
-    styles: { bgColor: "bg-green-800", textColor: "text-white" },
+    styles: {
+      bgColor: "bg-green-800",
+      textColor: "text-white",
+      background:
+        "linear-gradient(135deg, #3d3d3d 0%, #242424 50%, #171515 100%)",
+    },
   },
   {
     id: "zod-json-schema-builder",
@@ -188,7 +203,12 @@ export const projects = [
       { name: "Twilio", slug: "twilio/twilio" },
       { name: "Railway", slug: "railway/railway" },
     ],
-    styles: { bgColor: "bg-red-700", textColor: "text-white" },
+    styles: {
+      bgColor: "bg-blue-800",
+      textColor: "text-white",
+      background:
+        "linear-gradient(135deg, #8ab8ff 0%, #4684eb 50%, #2558be 100%)",
+    },
   },
   {
     id: "melany-portfolio",
@@ -219,6 +239,11 @@ export const projects = [
       { name: "Framer Motion", slug: "framer/framer" },
       { name: "Netlify", slug: "netlify/netlify" },
     ],
-    styles: { bgColor: "bg-blue-800", textColor: "text-white" },
+    styles: {
+      bgColor: "bg-purple-800",
+      textColor: "text-white",
+      background:
+        "linear-gradient(135deg, #6b6b76 0%, #2f2f37 38%, #111116 72%, #4b4b58 100%)",
+    },
   },
 ];

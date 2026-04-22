@@ -66,6 +66,7 @@ const normalize = (candidate, currentUrl) => {
   if (raw.startsWith("javascript:")) return null;
   if (/[`{}[\]$]/.test(raw)) return null;
   if (raw.includes(",") || raw.includes(" ")) return null;
+  if (!/^(\/|\.\/|\.\.\/|https?:\/\/)/i.test(raw)) return null;
 
   let resolved;
   try {
@@ -94,7 +95,8 @@ const extractUrls = (text, currentUrl) => {
   const patterns = [
     /(?:href|src)=["']([^"']+)["']/gim,
     /url\(([^)]+)\)/gim,
-    /import\(["']([^"']+)["']\)/gim,
+    /\bimport\s*\(\s*["']([^"']+)["']\s*\)/gim,
+    /\bfrom\s*["']([^"']+)["']/gim,
   ];
 
   for (const pattern of patterns) {
