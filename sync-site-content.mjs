@@ -425,6 +425,12 @@ const applyHomeCards = async () => {
     'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"},style:{clipPath:"inset(0 0 42% 0)"}})',
     `e.jsx("img",{src:"/bitmoji.webp",alt:"",${HOME_ABOUT_IMAGE_JS}})`
   );
+  // Final About image normalization: prevent duplicated `style` keys from
+  // leaving production with a different clipPath than localhost.
+  input = input.replace(
+    /e\.jsx\("img",\{src:"\/bitmoji\.webp",alt:"",className:"absolute object-contain",style:\{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset\(0 0 \d+% 0\)"\}(?:,style:\{clipPath:"inset\(0 0 \d+% 0\)"\})?\}\)/g,
+    `e.jsx("img",{src:"/bitmoji.webp",alt:"",${HOME_ABOUT_IMAGE_JS}})`
+  );
   input = replaceIfPresent(
     input,
     'eyePositions:[{x:150,y:60},{x:180,y:67}]',
@@ -581,6 +587,11 @@ const applyHomeCards = async () => {
   input = replaceIfPresent(
     input,
     'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"},style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}})',
+    `e.jsx("img",{src:"/bitmoji.webp",alt:"",${HOME_WORK_IMAGE_JS}})`
+  );
+  // Final Work image normalization for the same duplicated-style issue.
+  input = input.replace(
+    /e\.jsx\("img",\{src:"\/bitmoji\.webp",alt:"",className:"absolute object-contain",style:\{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset\(\d+% 0 0 0\)"\}(?:,style:\{clipPath:"inset\(\d+% 0 0 0\)"\})?\}\)/g,
     `e.jsx("img",{src:"/bitmoji.webp",alt:"",${HOME_WORK_IMAGE_JS}})`
   );
 
