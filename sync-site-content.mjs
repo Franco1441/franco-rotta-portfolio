@@ -68,6 +68,14 @@ const replaceNthOccurrence = (input, search, replacement, occurrence) => {
   );
 };
 
+const makeHeaderNameSpans = (name) =>
+  [...name]
+    .map(
+      (character) =>
+        `<span class="inline-block whitespace-pre" style="opacity:0;filter:blur(10px);transform:translateY(20px)">${character}</span>`
+    )
+    .join("");
+
 const ensure = (input, test, message) => {
   if (!test(input)) {
     throw new Error(message);
@@ -103,25 +111,41 @@ const serializeProject = (project) => {
 };
 
 const HOME_MARQUEE_STYLE_JS =
-  'style:{width:"98px",height:"98px",marginTop:"-4px",marginBottom:"-4px"}';
+  'style:{width:"92px",height:"92px",marginTop:"0px",marginBottom:"0px"}';
 const HOME_MARQUEE_STYLE_HTML =
-  'class="block object-contain rounded-[1.6rem]" style="width:98px;height:98px;margin-top:-4px;margin-bottom:-4px"';
+  'class="block object-contain rounded-[1.6rem]" style="width:92px;height:92px;margin-top:0px;margin-bottom:0px"';
 
 const HOME_ABOUT_CONTAINER_JS =
-  'className:"relative",style:{width:"240px",height:"160px",marginRight:"-38px",marginBottom:"-44px"}';
+  'className:"relative",style:{width:"240px",height:"160px",marginRight:"-38px",marginBottom:"-92px"}';
 const HOME_WORK_CONTAINER_JS =
-  'className:"relative",style:{width:"240px",height:"160px",marginRight:"-38px",marginTop:"-38px"}';
+  'className:"relative",style:{width:"240px",height:"160px",marginRight:"-38px",marginTop:"-72px"}';
 
 const HOME_ABOUT_CONTAINER_HTML =
-  '<div class="relative" style="width:240px;height:160px;margin-right:-38px;margin-bottom:-44px">';
+  '<div class="relative" style="width:240px;height:160px;margin-right:-38px;margin-bottom:-92px">';
 const HOME_WORK_CONTAINER_HTML =
-  '<div class="relative" style="width:240px;height:160px;margin-right:-38px;margin-top:-38px">';
+  '<div class="relative" style="width:240px;height:160px;margin-right:-38px;margin-top:-72px">';
 
-const HOME_ABOUT_EYES_JS = 'eyePositions:[{x:136,y:24},{x:186,y:34}]';
+// Eye tuning: edit ONLY these 4 numbers.
+const HOME_ABOUT_EYE_COORDS = {
+  left: { x: 146, y: 7 },
+  right: { x: 175, y: 24 },
+};
+
+const HOME_ABOUT_EYES_JS = `eyePositions:[{x:${HOME_ABOUT_EYE_COORDS.left.x},y:${HOME_ABOUT_EYE_COORDS.left.y}},{x:${HOME_ABOUT_EYE_COORDS.right.x},y:${HOME_ABOUT_EYE_COORDS.right.y}}]`;
 const HOME_ABOUT_EYES_HTML = [
-  'style="left:136px;top:24px;transform:translate(-50%, -50%)"',
-  'style="left:186px;top:34px;transform:translate(-50%, -50%)"',
+  `style="left:${HOME_ABOUT_EYE_COORDS.left.x}px;top:${HOME_ABOUT_EYE_COORDS.left.y}px;transform:translate(-50%, -50%)"`,
+  `style="left:${HOME_ABOUT_EYE_COORDS.right.x}px;top:${HOME_ABOUT_EYE_COORDS.right.y}px;transform:translate(-50%, -50%)"`,
 ];
+
+const HOME_ABOUT_IMAGE_JS =
+  'className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 44% 0)"}';
+const HOME_WORK_IMAGE_JS =
+  'className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(48% 0 0 0)"}';
+
+const HOME_ABOUT_IMAGE_HTML =
+  '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(0 0 44% 0)"/>';
+const HOME_WORK_IMAGE_HTML =
+  '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(48% 0 0 0)"/>';
 
 const HOME_WORK_DUPLICATE_STYLE =
   'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"},style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}})';
@@ -156,6 +180,109 @@ const applyHeroToHtml = async () => {
       input,
       ">Engineer<",
       `>${hero.fallbackSecondary}<`
+    );
+    await fs.writeFile(filePath, input, "utf8");
+  }
+};
+
+const applyGlobalBranding = async () => {
+  const files = [];
+
+  const walk = async (directory) => {
+    const entries = await fs.readdir(directory, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await walk(fullPath);
+        continue;
+      }
+      if (entry.name.endsWith(".html") || entry.name.endsWith(".js")) {
+        files.push(fullPath);
+      }
+    }
+  };
+
+  await walk(distDir);
+
+  const replacements = [
+    ["Franck Poingt", profile.name],
+    ["Franck&#x27;s Portfolio", `${profile.name} Portfolio`],
+    ["Franck's Portfolio", `${profile.name} Portfolio`],
+    ["Ask FranckGPT", "Ask FrancoGPT"],
+    ["Who is Franck?", "Who is Franco?"],
+  ];
+
+  for (const filePath of files) {
+    let input = await fs.readFile(filePath, "utf8");
+    const original = input;
+
+    for (const [from, to] of replacements) {
+      input = replaceIfPresent(input, from, to);
+    }
+
+    if (input !== original) {
+      await fs.writeFile(filePath, input, "utf8");
+    }
+  }
+};
+
+const applyHeaderNameToHtml = async () => {
+  const htmlFiles = [];
+
+  const walk = async (directory) => {
+    const entries = await fs.readdir(directory, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await walk(fullPath);
+        continue;
+      }
+      if (entry.name.endsWith(".html")) {
+        htmlFiles.push(fullPath);
+      }
+    }
+  };
+
+  await walk(distDir);
+
+  const header = `<h1 class="whitespace-pre-wrap text-3xl md:text-5xl lg:text-6xl font-medium font-serif" style="opacity:1">${makeHeaderNameSpans(
+    profile.name
+  )}</h1>`;
+
+  for (const filePath of htmlFiles) {
+    let input = await fs.readFile(filePath, "utf8");
+    input = input.replace(
+      /<h1 class="whitespace-pre-wrap text-3xl md:text-5xl lg:text-6xl font-medium font-serif" style="opacity:1">[\s\S]*?<\/h1>/g,
+      header
+    );
+    await fs.writeFile(filePath, input, "utf8");
+  }
+};
+
+const applyFaviconLinks = async () => {
+  const htmlFiles = [];
+
+  const walk = async (directory) => {
+    const entries = await fs.readdir(directory, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await walk(fullPath);
+        continue;
+      }
+      if (entry.name.endsWith(".html")) {
+        htmlFiles.push(fullPath);
+      }
+    }
+  };
+
+  await walk(distDir);
+
+  for (const filePath of htmlFiles) {
+    let input = await fs.readFile(filePath, "utf8");
+    input = input.replace(
+      /<link rel="icon" href="[^"]*"\s*\/?>/g,
+      '<link rel="icon" href="/favicon.png"/>'
     );
     await fs.writeFile(filePath, input, "utf8");
   }
@@ -237,12 +364,17 @@ const applyHomeCards = async () => {
   input = replaceIfPresent(
     input,
     'S=({project:t,className:n})=>e.jsx("div",{className:b("self-start flex-shrink-0",n),children:e.jsx(v.img,{src:t.thumbnail,alt:t.title,className:"size-28 md:size-30 block -my-2"})}),',
-    'S=({project:t,className:n})=>e.jsx("div",{className:b("self-start flex-shrink-0",n),children:e.jsx(v.img,{src:t.thumbnail,alt:t.title,className:"block object-contain rounded-[1.6rem]",style:{width:"98px",height:"98px",marginTop:"-4px",marginBottom:"-4px"}})}),'
+    `S=({project:t,className:n})=>e.jsx("div",{className:b("self-start flex-shrink-0",n),children:e.jsx(v.img,{src:t.thumbnail,alt:t.title,className:"block object-contain rounded-[1.6rem]",${HOME_MARQUEE_STYLE_JS}})}),`
   );
   input = replaceIfPresent(
     input,
     'S=({project:t,className:n})=>e.jsx("div",{className:b("self-start flex-shrink-0",n),children:e.jsx(v.img,{src:t.thumbnail,alt:t.title,className:"block object-contain rounded-[1.6rem]",style:t.id==="melany-portfolio"?{width:"88px",height:"126px",marginTop:"-6px",marginBottom:"-6px"}:{width:"112px",height:"112px",marginTop:"-8px",marginBottom:"-8px"}})}),',
-    'S=({project:t,className:n})=>e.jsx("div",{className:b("self-start flex-shrink-0",n),children:e.jsx(v.img,{src:t.thumbnail,alt:t.title,className:"block object-contain rounded-[1.6rem]",style:{width:"98px",height:"98px",marginTop:"-4px",marginBottom:"-4px"}})}),'
+    `S=({project:t,className:n})=>e.jsx("div",{className:b("self-start flex-shrink-0",n),children:e.jsx(v.img,{src:t.thumbnail,alt:t.title,className:"block object-contain rounded-[1.6rem]",${HOME_MARQUEE_STYLE_JS}})}),`
+  );
+  input = replaceIfPresent(
+    input,
+    'S=({project:t,className:n})=>e.jsx("div",{className:b("self-start flex-shrink-0",n),children:e.jsx(v.img,{src:t.thumbnail,alt:t.title,className:"block object-contain rounded-[1.6rem]",style:{width:"98px",height:"98px",marginTop:"-4px",marginBottom:"-4px"}})}),',
+    `S=({project:t,className:n})=>e.jsx("div",{className:b("self-start flex-shrink-0",n),children:e.jsx(v.img,{src:t.thumbnail,alt:t.title,className:"block object-contain rounded-[1.6rem]",${HOME_MARQUEE_STYLE_JS}})}),`
   );
   input = replaceIfPresent(
     input,
@@ -273,19 +405,25 @@ const applyHomeCards = async () => {
       'className:"absolute top-0 right-0 w-full h-auto object-contain"',
       'className:"absolute bottom-0 right-0 w-full h-auto object-contain"',
       'className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"}',
+      'className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 48% 0)"}',
     ],
-    'className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"}'
+    HOME_ABOUT_IMAGE_JS
   );
   input = replaceIfPresent(input, 'src:"/finalincon.png"', 'src:"/bitmoji.webp"');
   input = replaceIfPresent(
     input,
     'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"},style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"}})',
-    'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"}})'
+    `e.jsx("img",{src:"/bitmoji.webp",alt:"",${HOME_ABOUT_IMAGE_JS}})`
+  );
+  input = replaceIfPresent(
+    input,
+    'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 48% 0)"},style:{clipPath:"inset(0 0 42% 0)"}})',
+    `e.jsx("img",{src:"/bitmoji.webp",alt:"",${HOME_ABOUT_IMAGE_JS}})`
   );
   input = replaceIfPresent(
     input,
     'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"},style:{clipPath:"inset(0 0 42% 0)"}})',
-    'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"}})'
+    `e.jsx("img",{src:"/bitmoji.webp",alt:"",${HOME_ABOUT_IMAGE_JS}})`
   );
   input = replaceIfPresent(
     input,
@@ -314,13 +452,81 @@ const applyHomeCards = async () => {
   );
   input = replaceIfPresent(
     input,
+    'eyePositions:[{x:142,y:24},{x:180,y:34}]',
+    HOME_ABOUT_EYES_JS
+  );
+  input = replaceIfPresent(
+    input,
     'eyePositions:[{x:142,y:42},{x:172,y:51}]',
+    HOME_ABOUT_EYES_JS
+  );
+  input = replaceIfPresent(
+    input,
+    'eyePositions:[{x:166,y:39},{x:176,y:27}]',
+    HOME_ABOUT_EYES_JS
+  );
+  input = replaceIfPresent(
+    input,
+    'eyePositions:[{x:153,y:27},{x:185,y:31}]',
+    HOME_ABOUT_EYES_JS
+  );
+  input = replaceIfPresent(
+    input,
+    'eyePositions:[{x:152,y:12},{x:186,y:16}]',
+    HOME_ABOUT_EYES_JS
+  );
+  input = replaceIfPresent(
+    input,
+    'eyePositions:[{x:146,y:19},{x:176,y:27}]',
     HOME_ABOUT_EYES_JS
   );
   input = replaceIfPresent(
     input,
     'eyePositions:[{x:236,y:96},{x:286,y:107}]',
     HOME_ABOUT_EYES_JS
+  );
+  // Robust fallback: always replace the first eyePositions pair found in the bundle.
+  // This avoids getting stuck when the current build contains unknown coordinates.
+  let homeEyePositionsReplaced = false;
+  input = input.replace(
+    /eyePositions:\[\{x:-?\d+,y:-?\d+\},\{x:-?\d+,y:-?\d+\}\]/g,
+    (match) => {
+      if (homeEyePositionsReplaced) {
+        return match;
+      }
+      homeEyePositionsReplaced = true;
+      return HOME_ABOUT_EYES_JS;
+    }
+  );
+  input = replaceIfPresent(
+    input,
+    ",g=1.25,w=Math.cos(p)*g,j=Math.sin(p)*g;",
+    ",g=3,w=Math.cos(p)*g,j=Math.sin(p)*g;"
+  );
+  input = replaceIfPresent(
+    input,
+    'transform:`translate(calc(-50% + ${s}px), calc(-50% + ${d}px)) scale(.99)`',
+    'transform:`translate(calc(-50% + ${s}px), calc(-50% + ${d}px)) scale(1.04)`'
+  );
+  input = replaceIfPresent(
+    input,
+    'transform:`translate(calc(-50% + ${s}px), calc(-50% + ${d}px)) scale(.94)`',
+    'transform:`translate(calc(-50% + ${s}px), calc(-50% + ${d}px)) scale(1.04)`'
+  );
+  input = replaceIfPresent(
+    input,
+    'transform:`translate(calc(-50% + ${s}px), calc(-50% + ${d}px)) scale(.88)`',
+    'transform:`translate(calc(-50% + ${s}px), calc(-50% + ${d}px)) scale(1.04)`'
+  );
+  input = replaceIfPresent(
+    input,
+    'transform:`translate(calc(-50% + ${s}px), calc(-50% + ${d}px)) scale(.42)`',
+    'transform:`translate(calc(-50% + ${s}px), calc(-50% + ${d}px)) scale(1.04)`'
+  );
+  input = replaceIfPresent(
+    input,
+    'transform:`translate(calc(-50% + ${s}px), calc(-50% + ${d}px))`',
+    'transform:`translate(calc(-50% + ${s}px), calc(-50% + ${d}px)) scale(1.04)`'
   );
   input = replaceIfPresent(
     input,
@@ -345,17 +551,22 @@ const applyHomeCards = async () => {
   input = replaceIfPresent(
     input,
     HOME_WORK_DUPLICATE_STYLE,
-    `e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}})`
+    `e.jsx("img",{src:"/bitmoji.webp",alt:"",${HOME_WORK_IMAGE_JS}})`
   );
   input = replaceIfPresent(
     input,
     'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute bottom-4 w-full h-auto object-contain rounded-bl-lg",style:{clipPath:"inset(55% 0 0 0)"}})',
-    'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}})'
+    `e.jsx("img",{src:"/bitmoji.webp",alt:"",${HOME_WORK_IMAGE_JS}})`
   );
   input = replaceIfPresent(
     input,
     'className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}',
-    'className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}'
+    HOME_WORK_IMAGE_JS
+  );
+  input = replaceIfPresent(
+    input,
+    'className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(52% 0 0 0)"}',
+    HOME_WORK_IMAGE_JS
   );
   input = replaceIfPresent(
     input,
@@ -370,7 +581,7 @@ const applyHomeCards = async () => {
   input = replaceIfPresent(
     input,
     'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(0 0 42% 0)"},style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}})',
-    'e.jsx("img",{src:"/bitmoji.webp",alt:"",className:"absolute object-contain",style:{right:"0",bottom:"0",width:"100%",height:"auto",clipPath:"inset(55% 0 0 0)"}})'
+    `e.jsx("img",{src:"/bitmoji.webp",alt:"",${HOME_WORK_IMAGE_JS}})`
   );
 
   await write(file, input);
@@ -420,6 +631,11 @@ const applyHomeHtml = async () => {
   );
   html = replaceIfPresent(
     html,
+    'class="block object-contain rounded-[1.6rem]" style="width:98px;height:98px;margin-top:-4px;margin-bottom:-4px"',
+    HOME_MARQUEE_STYLE_HTML
+  );
+  html = replaceIfPresent(
+    html,
     'class="absolute inset-0 -bottom-6 flex items-end justify-end overflow-hidden pb-4"',
     'class="absolute inset-0 flex items-end justify-end overflow-hidden"'
   );
@@ -445,12 +661,22 @@ const applyHomeHtml = async () => {
   html = replaceIfPresent(
     html,
     '<img src="/finalincon.png" alt="" class="absolute top-0 w-full h-auto object-contain" style="clip-path:inset(0 0 42% 0)"/>',
-    '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(0 0 42% 0)"/>'
+    HOME_ABOUT_IMAGE_HTML
   );
   html = replaceIfPresent(
     html,
     '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(0 0 42% 0)" style="clip-path:inset(0 0 42% 0)"/>',
-    '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(0 0 42% 0)"/>'
+    HOME_ABOUT_IMAGE_HTML
+  );
+  html = replaceIfPresent(
+    html,
+    '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(0 0 42% 0)"/>',
+    HOME_ABOUT_IMAGE_HTML
+  );
+  html = replaceIfPresent(
+    html,
+    '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(0 0 48% 0)"/>',
+    HOME_ABOUT_IMAGE_HTML
   );
   html = replaceIfPresent(
     html,
@@ -484,6 +710,67 @@ const applyHomeHtml = async () => {
   );
   html = replaceIfPresent(
     html,
+    'style="left:142px;top:24px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[0]
+  );
+  html = replaceIfPresent(
+    html,
+    'style="left:180px;top:34px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[1]
+  );
+  html = replaceIfPresent(
+    html,
+    'style="left:166px;top:39px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[0]
+  );
+  html = replaceIfPresent(
+    html,
+    'style="left:176px;top:27px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[1]
+  );
+  html = replaceIfPresent(
+    html,
+    'style="left:153px;top:27px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[0]
+  );
+  html = replaceIfPresent(
+    html,
+    'style="left:185px;top:31px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[1]
+  );
+  html = replaceIfPresent(
+    html,
+    'style="left:152px;top:12px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[0]
+  );
+  html = replaceIfPresent(
+    html,
+    'style="left:186px;top:16px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[1]
+  );
+  html = replaceIfPresent(
+    html,
+    'style="left:146px;top:19px;transform:translate(-50%, -50%)"',
+    HOME_ABOUT_EYES_HTML[0]
+  );
+  // Robust fallback: replace the first two eye inline styles regardless of previous values.
+  let replacedEyeStyleCount = 0;
+  html = html.replace(
+    /style="left:-?\d+px;top:-?\d+px;transform:translate\(-50%, -50%\)"/g,
+    (match) => {
+      if (replacedEyeStyleCount === 0) {
+        replacedEyeStyleCount += 1;
+        return HOME_ABOUT_EYES_HTML[0];
+      }
+      if (replacedEyeStyleCount === 1) {
+        replacedEyeStyleCount += 1;
+        return HOME_ABOUT_EYES_HTML[1];
+      }
+      return match;
+    }
+  );
+  html = replaceIfPresent(
+    html,
     '<div class="relative w-48 h-24">',
     HOME_WORK_CONTAINER_HTML
   );
@@ -504,12 +791,22 @@ const applyHomeHtml = async () => {
   html = replaceIfPresent(
     html,
     '<img src="/finalincon.png" alt="" class="absolute bottom-4 w-full h-auto object-contain rounded-bl-lg" style="clip-path:inset(55% 0 0 0)"/>',
-    '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(55% 0 0 0)"/>'
+    HOME_WORK_IMAGE_HTML
   );
   html = replaceIfPresent(
     html,
     '<img src="/bitmoji.webp" alt="" class="absolute bottom-4 w-full h-auto object-contain rounded-bl-lg" style="clip-path:inset(55% 0 0 0)"/>',
-    '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(55% 0 0 0)"/>'
+    HOME_WORK_IMAGE_HTML
+  );
+  html = replaceIfPresent(
+    html,
+    '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(55% 0 0 0)"/>',
+    HOME_WORK_IMAGE_HTML
+  );
+  html = replaceIfPresent(
+    html,
+    '<img src="/bitmoji.webp" alt="" class="absolute object-contain" style="right:0;bottom:0;width:100%;height:auto;clip-path:inset(52% 0 0 0)"/>',
+    HOME_WORK_IMAGE_HTML
   );
   html = replaceIfPresent(
     html,
@@ -611,6 +908,67 @@ const applyContactForm = async () => {
   );
 
   await write(file, input);
+};
+
+const applyAboutContent = async () => {
+  const replacements = [
+    ["Auckland, New Zealand", profile.location],
+    ["English (Fluent), French (Native), TypeScript", "Spanish (Native), English (B2), TypeScript"],
+    [
+      "I am a Software Engineer based in Auckland, New Zealand with a passion for building ",
+      "I am a Full Stack Developer based in Santa Fe, Argentina focused on building ",
+    ],
+    [
+      "I am a Software Engineer based in Santa Fe, Argentina with a passion for building ",
+      "I am a Full Stack Developer based in Santa Fe, Argentina focused on building ",
+    ],
+    [
+      "UX-heavy web applications",
+      "production-ready web applications, integrations and automation flows",
+    ],
+    [
+      "that drive real business results.",
+      "that solve real operational problems.",
+    ],
+    [
+      "My journey into engineering was non-traditional. I started self-teaching during the pandemic and haven't stopped since. That drive led me to build ",
+      "My path into development has been hands-on and product-focused. I learned by shipping for real clients and teams, and that led me to build ",
+    ],
+    ["Scraaatch", "client products across commerce, quoting and scheduling"],
+    ["1,200+ active users", "production systems with daily usage"],
+    [
+      "I don't just write code, I ship products that people use.",
+      "I focus on reliable delivery, clean UX and maintainable full-stack implementations.",
+    ],
+    [
+      "When I'm not shipping features or mentoring junior devs, I'm an avid traveller, ex-homebrewer, and football fan.",
+      "Alongside software, I also lead audiovisual production and streaming workflows for events and media channels.",
+    ],
+    ["Node.js, NestJS, Deno, Bun", "Node.js, Express, API Routes, Bun"],
+    ["PostgreSQL, MongoDB, Supabase, Convex", "PostgreSQL, Supabase, SQL-first data design"],
+    ["Docker, GCP, Cloudflare Workers, Vercel", "Vercel, Netlify, Cloudflare, CI/CD"],
+    ["Camunda (BPMN/DMN), Vercel AI SDK, Git/GitHub", "Payments, webhooks, Git/GitHub"],
+    ["React Native, Go, Effect.ts", "Advanced TypeScript, testing, backend architecture"],
+  ];
+
+  const targets = [
+    "dist/assets/index-B4y-iZIh.js",
+    "dist/about/index.html",
+  ];
+
+  for (const target of targets) {
+    if (!(await exists(target))) {
+      continue;
+    }
+
+    let input = await text(target);
+    for (const [from, to] of replacements) {
+      input = replaceIfPresent(input, from, to);
+      input = replaceIfPresent(input, from.replace(/'/g, "&#x27;"), to.replace(/'/g, "&#x27;"));
+    }
+
+    await write(target, input);
+  }
 };
 
 const applyProjectDataToMainBundle = async () => {
@@ -822,6 +1180,16 @@ const applyWorkExperienceArt = async () => {
     input = replaceIfPresent(input, from, to);
   }
 
+  // Force illustration sizing in case previous passes left logo dimensions behind.
+  input = input.replace(
+    /src:"\/bitmoji\.webp",alt:"Franco Rotta illustration",width:200,height:25,loading:"lazy",className:"dark:invert-0 invert"/g,
+    'src:"/bitmoji.webp",alt:"Franco Rotta illustration",width:220,height:220,loading:"lazy"'
+  );
+  input = input.replace(
+    /src:"\/bitmoji\.webp",alt:"Franco Rotta illustration",width:200,height:25/g,
+    'src:"/bitmoji.webp",alt:"Franco Rotta illustration",width:220,height:220'
+  );
+
   input = replaceIfPresent(
     input,
     'e.jsx(r,{src:"/finalincon.png",alt:"Franco Rotta illustration",width:220,height:220})',
@@ -840,6 +1208,14 @@ const applyWorkExperienceArt = async () => {
   for (const [from, to] of replacements) {
     html = replaceIfPresent(html, from, to);
   }
+  html = html.replace(
+    /src="\/bitmoji\.webp" alt="Franco Rotta illustration" width="200" height="25" loading="lazy" class="dark:invert-0 invert"/g,
+    'src="/bitmoji.webp" alt="Franco Rotta illustration" width="220" height="220" loading="lazy"'
+  );
+  html = html.replace(
+    /src="\/bitmoji\.webp" alt="Franco Rotta illustration" width="200" height="25"/g,
+    'src="/bitmoji.webp" alt="Franco Rotta illustration" width="220" height="220"'
+  );
   html = replaceIfPresent(
     html,
     '<link rel="preload" as="image" href="/hmy.svg"/>',
@@ -1153,6 +1529,7 @@ const applyProjectsHtml = async () => {
 
 const applyStaticAssets = async () => {
   const staticAssets = [
+    ["public/favicon.png", "dist/favicon.png"],
     ["public/bitmoji.webp", "dist/bitmoji.webp"],
     ["public/finalincon.png", "dist/finalincon.png"],
     ["public/email.svg", "dist/email.svg"],
@@ -1173,11 +1550,15 @@ const applyStaticAssets = async () => {
 
 export async function applyMirrorCustomizations() {
   await applyHeroToHtml();
+  await applyHeaderNameToHtml();
+  await applyFaviconLinks();
+  await applyGlobalBranding();
   await applyHeroToMainBundle();
   await applyHomeCards();
   await applyHomeHtml();
   await applyContactLinks();
   await applyContactForm();
+  await applyAboutContent();
   await applyProjectDataToMainBundle();
   await applyProjectsPageBundle();
   await applyProjectCardBundle();

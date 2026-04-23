@@ -7,7 +7,6 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const watchedFiles = [
   "site-content.mjs",
   "sync-site-content.mjs",
-  "update-profile-content.mjs",
 ];
 
 let isRunning = false;
@@ -54,7 +53,6 @@ const runSync = async (reason = "manual") => {
 
   try {
     await runScript("sync-site-content.mjs");
-    await runScript("update-profile-content.mjs");
     log("sync complete");
   } catch (error) {
     log(`sync failed: ${error.message}`);
