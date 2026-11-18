@@ -39,6 +39,19 @@ test("project list and client data include PokeRadar", async () => {
   assert.match(await read("assets/main-BWk4fnlg.js"), /id:"pokeradar"/);
 });
 
+test("PokeRadar uses the padded icon consistently across rendered project routes", async () => {
+  const project = projects.find(project => project.id === "pokeradar");
+  const source = await fs.readFile(new URL("../public/projects/pokeradar.svg", import.meta.url), "utf8");
+  assert.match(source, /viewBox="0 0 128 128"/);
+  assert.match(source, /<rect width="128" height="128" rx="28" fill="#172b4d"/);
+  assert.match(source, /transform="translate\(16 16\) scale\(1\.5\)"/);
+  assert.equal(await read("projects/pokeradar.svg"), source);
+  for (const route of ["projects/index.html", "projects/pokeradar/index.html"]) {
+    assert.ok((await read(route)).includes(`src="${project.thumbnail}"`));
+  }
+  assert.ok((await read("assets/main-BWk4fnlg.js")).includes(`thumbnail:"${project.thumbnail}"`));
+});
+
 test("bilingual downloadable CVs are present and have PDF signatures", async () => {
   for (const language of ["es", "en"]) {
     const buffer = await fs.readFile(new URL(`../dist/cv-franco-rotta-${language}.pdf`, import.meta.url));

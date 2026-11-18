@@ -253,7 +253,7 @@ export const projects = [
     subtitle: "Interactive maps, data and a 360-degree Safari",
     description: "Geospatial React experience with interactive maps, a 360-degree Safari and expedition analytics.",
     longDescription: "Independent technical project built with Next.js and TypeScript. Explore seven habitats with MapLibre, discover Pokémon in a Three.js Safari, and compare expedition data. PokéAPI and Open-Meteo provide species and weather data; encounters are simulated. Developed with AI assistance, manual iteration and automated tests.",
-    thumbnail: "/projects/pokeradar.svg",
+    thumbnail: "/projects/pokeradar.svg?v=2",
     category: "Frontend / Interactive Data",
     year: "2026",
     links: {
