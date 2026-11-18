@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { syncCareerContent } from "./sync-career-content.mjs";
 import {
   contactLinks,
   hero,
@@ -1576,6 +1577,7 @@ export async function applyMirrorCustomizations() {
   await applyProjectsHtml();
   await applyWorkExperienceArt();
   await applyStaticAssets();
+  await syncCareerContent();
 }
 
 const isDirectRun =

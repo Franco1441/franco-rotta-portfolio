@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-const BASE_URL = "https://www.franckpoingt.dev";
-const DIST_DIR = "dist";
+const BASE_URL = process.env.PORTFOLIO_SOURCE_URL || "https://www.franckpoingt.dev";
+const DIST_DIR = process.env.PORTFOLIO_OUTPUT_DIR || "dist";
 const START_PATHS = ["/"];
 
 const assetLikeExtensions = new Set([

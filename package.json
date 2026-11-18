@@ -6,7 +6,7 @@
     "mirror": "node mirror-site.mjs",
     "sync:content": "node sync-site-content.mjs",
     "sync:watch": "node sync-watch.mjs",
-    "build": "npm run mirror && npm run sync:content",
+    "build": "node prepare-site.mjs && npm run sync:content",
     "dev": "node server.mjs",
     "start": "node server.mjs"
   },

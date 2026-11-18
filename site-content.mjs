@@ -7,6 +7,7 @@ export const profile = {
   github: "https://github.com/Franco1441",
   linkedin: "https://www.linkedin.com/in/franco-rotta",
   contactPage: "/contact",
+  website: "https://portfolio-bay-phi-49.vercel.app",
 };
 
 export const hero = {
@@ -244,6 +245,40 @@ export const projects = [
       textColor: "text-white",
       background:
         "linear-gradient(135deg, #6b6b76 0%, #2f2f37 38%, #111116 72%, #4b4b58 100%)",
+    },
+  },
+  {
+    id: "pokeradar",
+    title: "PokéRadar",
+    subtitle: "Interactive maps, data and a 360-degree Safari",
+    description: "Geospatial React experience with interactive maps, a 360-degree Safari and expedition analytics.",
+    longDescription: "Independent technical project built with Next.js and TypeScript. Explore seven habitats with MapLibre, discover Pokémon in a Three.js Safari, and compare expedition data. PokéAPI and Open-Meteo provide species and weather data; encounters are simulated. Developed with AI assistance, manual iteration and automated tests.",
+    thumbnail: "/projects/pokeradar.svg",
+    category: "Frontend / Interactive Data",
+    year: "2026",
+    links: {
+      github: "https://github.com/Franco1441/pokeradar",
+      website: "https://pokeradar-lyart.vercel.app",
+    },
+    features: [
+      "Interactive globe and regional maps with MapLibre",
+      "Three.js 360-degree Safari with shared radar state",
+      "PokéAPI and Open-Meteo integration with cached queries",
+      "Expedition comparison and locally persisted progress",
+      "Vitest unit tests and Playwright browser tests",
+    ],
+    technologies: [
+      { name: "Next.js", slug: "nextdotjs" },
+      { name: "TypeScript", slug: "typescript" },
+      { name: "MapLibre", slug: "maplibre" },
+      { name: "Three.js", slug: "threedotjs" },
+      { name: "TanStack Query", slug: "reactquery" },
+      { name: "Playwright", slug: "playwright" },
+    ],
+    styles: {
+      bgColor: "bg-red-700",
+      textColor: "text-white",
+      background: "linear-gradient(135deg, #b62738 0%, #d83243 48%, #8d1830 100%)",
     },
   },
 ];

@@ -1,45 +1,42 @@
-# Franco Rotta Portfolio Mirror
+# Franco Rotta | Portfolio
 
-Este proyecto sigue teniendo una base de mirror estático del sitio original, pero ahora la personalización del contenido vive en archivos propios para no editar `dist/` a mano cada vez.
+Portfolio personal de desarrollo web: proyectos, experiencia, stack y contacto.
 
-Snapshot local del sitio [franckpoingt.dev](https://www.franckpoingt.dev) para mantener el clon visual exacto.
+**[Ver portfolio](https://portfolio-bay-phi-49.vercel.app)** · **[GitHub](https://github.com/Franco1441)** · **[LinkedIn](https://www.linkedin.com/in/franco-rotta)**
 
-## Flujo
+## Proyectos
 
-1. `npm run mirror`
-   Descarga otra vez las rutas y assets del sitio base hacia `dist/`.
+- **PokéRadar:** Next.js, TypeScript, MapLibre, Three.js, TanStack Query, Vitest y Playwright. Exploración geoespacial, Safari 360° y comparación de expediciones.
+- **Tostadero Wellington:** pedidos, carrito, checkout con Mercado Pago, webhooks y operaciones internas con Supabase.
+- **Cotizador Santa Fe:** cotización guiada, validación, PDF y envío por correo.
+- **SEMO:** turnos por WhatsApp, disponibilidad y administración con React, Node.js y PostgreSQL.
+- **Brazos Abiertos y Melany Altare:** sitios institucionales y experiencias de portfolio.
 
-2. `npm run sync:content`
-   Reaplica el contenido de Franco sobre el mirror usando:
-   - `site-content.mjs` como fuente central de datos y copy
-   - `sync-site-content.mjs` como script de sincronización
-   - `update-profile-content.mjs` como capa final de ajustes sobre el HTML y bundles espejados
+## Desarrollo local
 
-3. `npm run dev`
-   Levanta el sitio local con:
-   - archivos estáticos desde `dist/`
-   - `Ask FrancoGPT`
-   - endpoint local para el formulario de contacto
+```sh
+npm ci
+npm run build
+npm run dev
+```
 
-## Comandos
+El sitio se sirve en `http://localhost:3000`. Para reaplicar contenido sin volver a preparar todos los recursos:
 
-- `npm run mirror`: vuelve a descargar rutas y assets desde el sitio online.
-- `npm run sync:content`: reaplica el contenido local sobre el mirror.
-- `npm run build`: ejecuta mirror + sync en un solo paso.
-- `npm run dev`: levanta preview local en `http://localhost:3000`.
-- `npm run start`: sirve el mismo preview estático y las APIs locales.
+```sh
+npm run sync:content
+npm run sync:watch
+```
 
-## Archivos clave
+## Editar contenido
 
-- `site-content.mjs`: perfil, hero, contacto y contenido de proyectos.
-- `sync-site-content.mjs`: aplica el contenido al mirror compilado.
-- `update-profile-content.mjs`: corrige texto, header y páginas estáticas del snapshot.
-- `server.mjs`: sirve el sitio, el chat y el endpoint de contacto.
-- `mirror-site.mjs`: vuelve a descargar el snapshot del sitio base.
+- `site-content.mjs`: perfil, enlaces, proyectos y degradados de las tarjetas (`styles.background`).
+- `career-content.mjs`: presentación, formación, habilidades y experiencia.
+- `public/`: ilustraciones e iconos personales.
+- `sync-site-content.mjs` y `sync-career-content.mjs`: generan las páginas y sincronizan el contenido con la navegación del cliente.
+- `server.mjs`: preview, chat y endpoint de contacto.
 
-## Nota importante
+`dist/` es un resultado generado. Los cambios de contenido deben hacerse en los archivos anteriores para que persistan al sincronizar.
 
-- El mirror genera archivos estáticos en `dist/`.
-- Fecha de snapshot actual: `2026-04-15`.
-- Como la base sigue siendo un build espejado, parte del trabajo todavía se aplica sobre bundles compilados.
-- La mejora real de mantenibilidad en una siguiente etapa sería reconstruir esto con una estructura `src/` propia y un build controlado por nosotros, pero sin cambiar el diseño aprobado.
+## Publicación
+
+Repositorio conectado a Vercel. Las actualizaciones se verifican localmente antes de publicarse. Los proyectos técnicos se identifican como tales, separados de la experiencia freelance.
